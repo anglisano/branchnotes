@@ -1,7 +1,7 @@
 {
   "name": "branchnotes",
   "displayName": "BranchNotes",
-  "description": "Markdown notes organized by repository and Git branch.",
+  "description": "Git branch notes: local Markdown notes organized by repository and branch.",
   "version": "0.1.0",
   "publisher": "branchnotes",
   "license": "MIT",
@@ -12,8 +12,8 @@
   "engines": {
     "vscode": "^1.95.0"
   },
-  "categories": ["Other"],
-  "keywords": ["notes", "markdown", "git", "branch"],
+  "categories": ["Productivity", "Other"],
+  "keywords": ["git", "git notes", "git branch", "branch notes", "repository notes", "developer notes", "todo", "markdown"],
   "activationEvents": ["onStartupFinished"],
   "main": "./out/extension.js",
   "contributes": {
@@ -23,7 +23,7 @@
       { "command": "branchnotes.createTodoNote", "title": "BranchNotes: Create Note from TODOs", "category": "BranchNotes" },
       { "command": "branchnotes.editNote", "title": "BranchNotes: Edit Note", "category": "BranchNotes" },
       { "command": "branchnotes.deleteNote", "title": "BranchNotes: Delete Note", "category": "BranchNotes" },
-      { "command": "branchnotes.protectNotes", "title": "BranchNotes: Protect Notes with .gitignore", "category": "BranchNotes" }
+      { "command": "branchnotes.protectNotes", "title": "BranchNotes: Add Notes to .gitignore", "category": "BranchNotes" }
     ],
     "menus": {
       "commandPalette": [

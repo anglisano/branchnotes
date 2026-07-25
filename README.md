@@ -1,6 +1,6 @@
 # BranchNotes
 
-BranchNotes es una extensión de VS Code para guardar notas Markdown locales organizadas por repositorio y rama de Git. Permite consultar el contexto de una rama sin mezclarlo con el código de otra.
+BranchNotes es una extensión de VS Code para guardar notas Markdown locales de Git, organizadas por repositorio y rama. Permite consultar el contexto de una rama sin mezclarlo con el código de otra.
 
 ## Instalación
 
@@ -13,7 +13,7 @@ Durante el desarrollo se puede ejecutar la extensión con **Run BranchNotes Exte
 - **BranchNotes: Create Note from TODOs**: escanea el repositorio y genera una nota Markdown agrupada por archivo.
 - **BranchNotes: Edit Note**: abre el archivo original en el editor de VS Code.
 - **BranchNotes: Delete Note**: pide confirmación y envía el archivo a la papelera.
-- **BranchNotes: Protect Notes with .gitignore**: ofrece ignorar las notas, siempre con confirmación explícita.
+- **BranchNotes: Add Notes to .gitignore**: añade `.vscode/branchnotes/` al `.gitignore`, siempre con confirmación explícita.
 
 También puedes abrir el panel haciendo clic en **$(note) BranchNotes** en la barra de estado inferior de VS Code. El botón aparece en la ventana **Extension Development Host** iniciada por la depuración.
 
