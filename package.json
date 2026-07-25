@@ -1,0 +1,158 @@
+{
+  "name": "branchnotes",
+  "displayName": "BranchNotes",
+  "description": "Git branch notes: local Markdown notes organized by repository and branch.",
+  "version": "0.1.0",
+  "publisher": "branchnotes",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/marcanglisanoroca/branchnotes.git"
+  },
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "Productivity",
+    "Other"
+  ],
+  "keywords": [
+    "git",
+    "git notes",
+    "git branch",
+    "branch notes",
+    "repository notes",
+    "developer notes",
+    "todo",
+    "markdown"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "branchnotes.openPanel",
+        "title": "BranchNotes: Open Notes Panel",
+        "category": "BranchNotes"
+      },
+      {
+        "command": "branchnotes.createNote",
+        "title": "BranchNotes: Create Note",
+        "category": "BranchNotes"
+      },
+      {
+        "command": "branchnotes.createTodoNote",
+        "title": "BranchNotes: Create Note from TODOs",
+        "category": "BranchNotes"
+      },
+      {
+        "command": "branchnotes.editNote",
+        "title": "BranchNotes: Edit Note",
+        "category": "BranchNotes"
+      },
+      {
+        "command": "branchnotes.deleteNote",
+        "title": "BranchNotes: Delete Note",
+        "category": "BranchNotes"
+      },
+      {
+        "command": "branchnotes.protectNotes",
+        "title": "BranchNotes: Add Notes to .gitignore",
+        "category": "BranchNotes"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "branchnotes.createNote"
+        },
+        {
+          "command": "branchnotes.openPanel"
+        },
+        {
+          "command": "branchnotes.protectNotes"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "BranchNotes",
+      "properties": {
+        "branchnotes.todoMarkers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+          },
+          "default": [
+            "TODO",
+            "FIXME",
+            "HACK",
+            "XXX"
+          ],
+          "description": "Etiquetas que BranchNotes busca al generar una nota de tareas."
+        },
+        "branchnotes.todoExcludeDirectories": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "default": [
+            ".git",
+            ".vscode",
+            "node_modules",
+            ".venv",
+            "venv",
+            "__pycache__",
+            "out",
+            "dist",
+            "build",
+            ".vscode-test",
+            "coverage"
+          ],
+          "description": "Directorios que se excluyen al buscar etiquetas de tareas."
+        },
+        "branchnotes.todoMaxTextLength": {
+          "type": "number",
+          "minimum": 1,
+          "default": 100,
+          "description": "Número máximo de caracteres conservados del texto de cada etiqueta encontrada."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "typecheck": "tsc --noEmit -p ./",
+    "lint": "eslint .",
+    "test:unit": "mocha --require ts-node/register \"test/unit/**/*.test.ts\"",
+    "test:unit:coverage": "npm run compile && tsc -p tsconfig.test.json && c8 --all --include=out-test/src/**/*.js --reporter=text --reporter=html mocha \"out-test/test/unit/**/*.test.js\"",
+    "test:integration": "npm run compile && tsc -p tsconfig.test.json && node ./out-test/test/runTest.js",
+    "test": "npm run test:unit && npm run test:integration",
+    "package": "npm run compile && vsce package",
+    "vscode:prepublish": "npm run compile"
+  },
+  "dependencies": {
+    "markdown-it": "^14.1.0",
+    "sanitize-html": "^2.17.0"
+  },
+  "devDependencies": {
+    "@types/markdown-it": "^14.1.2",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^22.15.0",
+    "@types/sanitize-html": "^2.16.0",
+    "@types/vscode": "^1.95.0",
+    "@typescript-eslint/eslint-plugin": "^8.33.0",
+    "@typescript-eslint/parser": "^8.33.0",
+    "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "^3.6.0",
+    "c8": "^12.0.0",
+    "eslint": "^9.27.0",
+    "mocha": "^11.7.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}

@@ -1,0 +1,8 @@
+node_modules/
+out/
+out-test/
+.vscode-test/
+coverage/
+*.vsix
+.DS_Store
+.github/prompts/*
