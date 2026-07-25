@@ -4,7 +4,16 @@ src/
 test/
 out-test/
 .vscode-test/
-node_modules/
+coverage/
+CD-PUBLISHER.md
+node_modules/*/@types/
+node_modules/@types/
+node_modules/typescript/
+node_modules/eslint/
+node_modules/mocha/
+node_modules/ts-node/
+node_modules/c8/
+node_modules/@vscode/
 eslint.config.mjs
 tsconfig.json
 tsconfig.test.json

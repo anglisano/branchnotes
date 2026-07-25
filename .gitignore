@@ -3,6 +3,7 @@ out/
 out-test/
 .vscode-test/
 coverage/
+vsix-inspect/
 *.vsix
 .DS_Store
 .github/prompts/*

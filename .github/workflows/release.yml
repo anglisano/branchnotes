@@ -28,7 +28,7 @@ jobs:
           npm run test:unit
           xvfb-run -a npm run test:integration
       - name: Package VSIX
-        run: npm run package -- --no-dependencies
+        run: npm run package
       - name: Upload VSIX artifact
         uses: actions/upload-artifact@v4
         with:

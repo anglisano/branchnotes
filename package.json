@@ -2,7 +2,7 @@
   "name": "branchnotes-git",
   "displayName": "BranchNotes by Anglisano",
   "description": "Git branch notes: local Markdown notes organized by repository and branch.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "icon": "media/icon.png",
   "publisher": "anglisano",
   "license": "MIT",
