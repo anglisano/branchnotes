@@ -1,5 +1,5 @@
 {
-  "name": "branchnotes",
+  "name": "branchnotes-git",
   "displayName": "BranchNotes",
   "description": "Git branch notes: local Markdown notes organized by repository and branch.",
   "version": "0.1.0",
