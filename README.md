@@ -1,31 +1,33 @@
 # BranchNotes
 
-BranchNotes es una extensión de VS Code para guardar notas Markdown locales de Git, organizadas por repositorio y rama. Permite consultar el contexto de una rama sin mezclarlo con el código de otra.
+BranchNotes is a VS Code extension for keeping local Markdown notes organized by Git repository and branch. Capture the context of a branch without mixing it with notes from another one.
 
-## Instalación
+## Features
 
-Durante el desarrollo se puede ejecutar la extensión con **Run BranchNotes Extension** desde el panel de depuración. Para instalar una versión empaquetada, ejecuta `npm run package` y abre el `.vsix` generado con **Extensions: Install from VSIX**.
+- Browse notes grouped by branch from the BranchNotes panel.
+- Create and edit regular Markdown files in the VS Code editor.
+- Import `TODO`, `FIXME`, `HACK`, and `XXX` items from a repository into a new note.
+- Delete notes by sending them to the system trash after confirmation.
+- Optionally add `.vscode/branchnotes/` to `.gitignore`.
 
-## Comandos
+## Commands
 
-- **BranchNotes: Open Notes Panel**: abre el visor agrupado por rama.
-- **BranchNotes: Create Note**: solicita el título y abre inmediatamente un archivo Markdown editable.
-- **BranchNotes: Create Note from TODOs**: escanea el repositorio y genera una nota Markdown agrupada por archivo.
-- **BranchNotes: Edit Note**: abre el archivo original en el editor de VS Code.
-- **BranchNotes: Delete Note**: pide confirmación y envía el archivo a la papelera.
-- **BranchNotes: Add Notes to .gitignore**: añade `.vscode/branchnotes/` al `.gitignore`, siempre con confirmación explícita.
+- **BranchNotes: Open Notes Panel**: Open the notes panel grouped by branch.
+- **BranchNotes: Create Note**: Enter a title and open a new editable Markdown file.
+- **BranchNotes: Create Note from TODOs**: Scan the repository and create a note grouped by file.
+- **BranchNotes: Edit Note**: Open the original note in the VS Code editor.
+- **BranchNotes: Delete Note**: Confirm and send a note to the system trash.
+- **BranchNotes: Add Notes to .gitignore**: Add `.vscode/branchnotes/` to `.gitignore` with explicit confirmation.
 
-También puedes abrir el panel haciendo clic en **$(note) BranchNotes** en la barra de estado inferior de VS Code. El botón aparece en la ventana **Extension Development Host** iniciada por la depuración.
+## Markdown Notes
 
-### Escribir notas en Markdown
+Notes open as regular `.md` files in the VS Code editor, so you can use headings, lists, links, code blocks, and checkboxes as usual. Use **Markdown: Open Preview to the Side** to preview a note.
 
-Al crear una nota solo se solicita el título. Después se abre el archivo `.md` original en el editor de VS Code, donde puedes escribir Markdown normalmente: encabezados, listas, enlaces, código y checkboxes. Para ver la previsualización, usa **Markdown: Open Preview to the Side** (`Cmd+K V` en macOS). Los metadatos se mantienen automáticamente en el front matter superior del archivo.
+Each note stores its branch metadata in front matter and keeps the Markdown content editable.
 
-El panel también incluye **Importar TODOs**, que busca `TODO`, `FIXME`, `HACK` y `XXX`, excluye dependencias y carpetas generadas, y crea una nota nueva con archivo, línea y texto agrupados.
+## TODO Scanner
 
-### Configuración del escáner de TODOs
-
-Las etiquetas y exclusiones se pueden cambiar desde **Settings → Extensions → BranchNotes** o desde `settings.json`:
+Configure markers, excluded directories, and the maximum text length from **Settings → Extensions → BranchNotes** or `settings.json`:
 
 ```json
 {
@@ -35,11 +37,11 @@ Las etiquetas y exclusiones se pueden cambiar desde **Settings → Extensions �
 }
 ```
 
-Si no configuras estos valores, se usan `TODO`, `FIXME`, `HACK` y `XXX`, junto con las carpetas generadas habituales (`.git`, `.vscode`, `node_modules`, `.venv`, `venv`, `__pycache__`, `dist`, `build` y otras). El texto de cada resultado se limita por defecto a 100 caracteres y termina en `...`; puedes cambiarlo con `branchnotes.todoMaxTextLength`. Si dejas una lista vacía, BranchNotes también recupera los valores por defecto.
+By default, BranchNotes searches for `TODO`, `FIXME`, `HACK`, and `XXX`, while excluding common dependency and generated directories. TODO results include the file, line, and matching text.
 
-## Almacenamiento
+## Where Notes Are Stored
 
-Cada nota es un archivo independiente con front matter y contenido Markdown:
+Notes are stored locally in the workspace as independent Markdown files:
 
 ```text
 .vscode/branchnotes/
@@ -49,38 +51,4 @@ Cada nota es un archivo independiente con front matter y contenido Markdown:
 └─ no-git/notes/<id>.md
 ```
 
-Las ramas se convierten en claves seguras con un hash para evitar colisiones entre `feature/login`, `feature-login` y nombres con Unicode. El nombre de rama original se conserva en los metadatos. El panel escanea todas las ramas almacenadas, incluso si ya no existen localmente.
-
-En un workspace sin Git, las notas se guardan en `no-git` y el panel muestra **Sin repositorio Git**. El MVP usa la primera carpeta en un workspace multi-root.
-
-Las notas se guardan localmente en el workspace, pero no se ignoran automáticamente. Puedes versionarlas intencionadamente o ejecutar el comando de protección para añadir `.vscode/branchnotes/` a `.gitignore`.
-
-## Seguridad del visor
-
-El Webview utiliza Content Security Policy, nonces para el script y mensajes tipados. Markdown se renderiza con `markdown-it` y se sanitiza antes de insertarse en el DOM; HTML embebido, scripts y atributos peligrosos no se ejecutan.
-
-## Desarrollo
-
-Requisitos: Node.js LTS y VS Code.
-
-```text
-npm ci
-npm run lint
-npm run typecheck
-npm run test:unit
-npm run test:unit:coverage
-npm run test:integration
-npm run package
-```
-
-`npm run test:unit` muestra el resultado de Mocha directamente en el terminal. `npm run test:unit:coverage` muestra el resumen de cobertura en el terminal y genera el informe HTML en `coverage/index.html`; ábrelo desde el Explorer de VS Code o con un navegador. La cobertura se aplica a `src/**/*.ts` y la carpeta `coverage/` está excluida de Git.
-
-La integración usa `@vscode/test-electron`; en Linux necesita un display virtual, por ejemplo `xvfb-run -a npm run test:integration`. Sus resultados aparecen en el terminal y el proceso termina con código 0 si pasa o 1 si falla. Las pruebas trabajan con directorios temporales o con el entorno de pruebas de VS Code y no deben usar las notas reales del workspace.
-
-## Publicación
-
-Los workflows de GitHub Actions ejecutan lint, typecheck, pruebas y empaquetado en cada push y pull request. `release.yml` también se activa manualmente o con tags semánticos como `v0.1.0`, publica el `.vsix` como artefacto y utiliza el secreto protegido `VSCE_PAT` para el Marketplace. El token nunca se almacena en el repositorio.
-
-## Limitaciones y roadmap
-
-El MVP no incluye sincronización remota, colaboración, cifrado, búsqueda avanzada, etiquetas, favoritos, configuración de ubicación ni soporte completo para múltiples repositorios en un workspace multi-root. Las siguientes iteraciones pueden añadir esas capacidades y un editor Markdown dedicado dentro del Webview.
+Branch names are converted into safe keys to avoid collisions, while the original branch name is preserved in the note metadata. In a workspace without Git, notes are stored in `no-git`.
