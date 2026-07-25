@@ -68,11 +68,14 @@ npm ci
 npm run lint
 npm run typecheck
 npm run test:unit
+npm run test:unit:coverage
 npm run test:integration
 npm run package
 ```
 
-La integración usa `@vscode/test-electron`; en Linux necesita un display virtual, por ejemplo `xvfb-run -a npm run test:integration`. Las pruebas trabajan con directorios temporales o con el entorno de pruebas de VS Code y no deben usar las notas reales del workspace.
+`npm run test:unit` muestra el resultado de Mocha directamente en el terminal. `npm run test:unit:coverage` muestra el resumen de cobertura en el terminal y genera el informe HTML en `coverage/index.html`; ábrelo desde el Explorer de VS Code o con un navegador. La cobertura se aplica a `src/**/*.ts` y la carpeta `coverage/` está excluida de Git.
+
+La integración usa `@vscode/test-electron`; en Linux necesita un display virtual, por ejemplo `xvfb-run -a npm run test:integration`. Sus resultados aparecen en el terminal y el proceso termina con código 0 si pasa o 1 si falla. Las pruebas trabajan con directorios temporales o con el entorno de pruebas de VS Code y no deben usar las notas reales del workspace.
 
 ## Publicación
 

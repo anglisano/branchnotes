@@ -23,6 +23,13 @@ jobs:
         run: npm run typecheck
       - name: Unit tests
         run: npm run test:unit
+      - name: Unit test coverage
+        run: npm run test:unit:coverage
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
       - name: Integration tests
         run: xvfb-run -a npm run test:integration
       - name: Package extension
