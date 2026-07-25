@@ -3,17 +3,16 @@
   "displayName": "BranchNotes",
   "description": "Git branch notes: local Markdown notes organized by repository and branch.",
   "version": "0.1.0",
-  "publisher": "branchnotes",
+  "publisher": "anglisano",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/marcanglisanoroca/branchnotes.git"
+    "url": "https://github.com/anglisano/branchnotes.git"
   },
   "engines": {
     "vscode": "^1.95.0"
   },
   "categories": [
-    "Productivity",
     "Other"
   ],
   "keywords": [
