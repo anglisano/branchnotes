@@ -1,145 +1,83 @@
-# BranchNotes (MVP)
+# BranchNotes
 
-Extensión para VS Code enfocada en tomar notas por **repositorio + rama**, evitando que esas notas se suban por error a Git.
+BranchNotes es una extensión de VS Code para guardar notas Markdown locales organizadas por repositorio y rama de Git. Permite consultar el contexto de una rama sin mezclarlo con el código de otra.
 
-## 1) Estructura propuesta del proyecto
+## Instalación
+
+Durante el desarrollo se puede ejecutar la extensión con **Run BranchNotes Extension** desde el panel de depuración. Para instalar una versión empaquetada, ejecuta `npm run package` y abre el `.vsix` generado con **Extensions: Install from VSIX**.
+
+## Comandos
+
+- **BranchNotes: Open Notes Panel**: abre el visor agrupado por rama.
+- **BranchNotes: Create Note**: solicita el título y abre inmediatamente un archivo Markdown editable.
+- **BranchNotes: Create Note from TODOs**: escanea el repositorio y genera una nota Markdown agrupada por archivo.
+- **BranchNotes: Edit Note**: abre el archivo original en el editor de VS Code.
+- **BranchNotes: Delete Note**: pide confirmación y envía el archivo a la papelera.
+- **BranchNotes: Protect Notes with .gitignore**: ofrece ignorar las notas, siempre con confirmación explícita.
+
+También puedes abrir el panel haciendo clic en **$(note) BranchNotes** en la barra de estado inferior de VS Code. El botón aparece en la ventana **Extension Development Host** iniciada por la depuración.
+
+### Escribir notas en Markdown
+
+Al crear una nota solo se solicita el título. Después se abre el archivo `.md` original en el editor de VS Code, donde puedes escribir Markdown normalmente: encabezados, listas, enlaces, código y checkboxes. Para ver la previsualización, usa **Markdown: Open Preview to the Side** (`Cmd+K V` en macOS). Los metadatos se mantienen automáticamente en el front matter superior del archivo.
+
+El panel también incluye **Importar TODOs**, que busca `TODO`, `FIXME`, `HACK` y `XXX`, excluye dependencias y carpetas generadas, y crea una nota nueva con archivo, línea y texto agrupados.
+
+### Configuración del escáner de TODOs
+
+Las etiquetas y exclusiones se pueden cambiar desde **Settings → Extensions → BranchNotes** o desde `settings.json`:
+
+```json
+{
+	"branchnotes.todoMarkers": ["TODO", "FIXME", "BUG", "REVIEW"],
+	"branchnotes.todoExcludeDirectories": [".git", "node_modules", "dist", "vendor"],
+	"branchnotes.todoMaxTextLength": 100
+}
+```
+
+Si no configuras estos valores, se usan `TODO`, `FIXME`, `HACK` y `XXX`, junto con las carpetas generadas habituales (`.git`, `.vscode`, `node_modules`, `.venv`, `venv`, `__pycache__`, `dist`, `build` y otras). El texto de cada resultado se limita por defecto a 100 caracteres y termina en `...`; puedes cambiarlo con `branchnotes.todoMaxTextLength`. Si dejas una lista vacía, BranchNotes también recupera los valores por defecto.
+
+## Almacenamiento
+
+Cada nota es un archivo independiente con front matter y contenido Markdown:
 
 ```text
-branchnotes/
-├─ .vscode/
-│  ├─ launch.json
-│  └─ tasks.json
-├─ .github/
-│  └─ workflows/
-│     ├─ ci.yml
-│     └─ release.yml
-├─ src/
-│  ├─ extension.ts                # activate/deactivate, comandos, wiring
-│  ├─ git/
-│  │  └─ branchService.ts         # detección rama actual (VS Code Git API + fallback)
-│  ├─ notes/
-│  │  ├─ noteRepository.ts        # persistencia local por workspace+rama
-│  │  └─ noteTypes.ts
-│  ├─ webview/
-│  │  ├─ notesPanel.ts            # creación y ciclo de vida del WebviewPanel
-│  │  └─ markdownRenderer.ts      # sanitización/render de markdown
-│  └─ commands/
-│     ├─ openNotes.ts
-│     ├─ createNote.ts
-│     └─ listNotes.ts
-├─ test/
-│  ├─ unit/
-│  └─ integration/
-├─ package.json
-├─ tsconfig.json
-├─ .eslintrc.cjs
-├─ .gitignore
-└─ README.md
+.vscode/branchnotes/
+├─ branches/
+│  ├─ main-<hash>/notes/<id>.md
+│  └─ feature-login-<hash>/notes/<id>.md
+└─ no-git/notes/<id>.md
 ```
 
-## 2) APIs de VS Code necesarias
+Las ramas se convierten en claves seguras con un hash para evitar colisiones entre `feature/login`, `feature-login` y nombres con Unicode. El nombre de rama original se conserva en los metadatos. El panel escanea todas las ramas almacenadas, incluso si ya no existen localmente.
 
-- **Git API** (vscode.git):
-  - `vscode.extensions.getExtension('vscode.git')`
-  - `getAPI(1)` para acceder a repositorios y rama activa.
-- **Storage local**:
-  - `ExtensionContext.workspaceState` para persistencia por workspace.
-  - Alternativa: archivo local en `.vscode/branchnotes.json` y agregarlo a `.gitignore`.
-- **Webview Panel**:
-  - `vscode.window.createWebviewPanel(...)`
-  - `panel.webview.html` para renderizar listado y detalle en Markdown.
-  - `postMessage/onDidReceiveMessage` para interacción UI <-> extensión.
+En un workspace sin Git, las notas se guardan en `no-git` y el panel muestra **Sin repositorio Git**. El MVP usa la primera carpeta en un workspace multi-root.
 
-## 3) Fases de desarrollo del MVP
+Las notas se guardan localmente en el workspace, pero no se ignoran automáticamente. Puedes versionarlas intencionadamente o ejecutar el comando de protección para añadir `.vscode/branchnotes/` a `.gitignore`.
 
-### Fase 0 — Bootstrap técnico
-1. Inicializar extensión TypeScript (`yo code` o plantilla oficial VS Code).
-2. Definir comandos base en `package.json`:
-   - `branchnotes.openPanel`
-   - `branchnotes.createNote`
-3. Configurar ESLint + tests (`@vscode/test-electron`, `mocha`).
+## Seguridad del visor
 
-### Fase 1 — Núcleo de dominio (rama + almacenamiento)
-1. Implementar `branchService` para detectar rama activa por repositorio.
-2. Diseñar clave de almacenamiento: `notes::<workspaceFolder>::<branchName>`.
-3. Crear `noteRepository` con operaciones CRUD mínimas (crear/listar).
-4. Verificar que la persistencia sea local y nunca trackeada en Git.
+El Webview utiliza Content Security Policy, nonces para el script y mensajes tipados. Markdown se renderiza con `markdown-it` y se sanitiza antes de insertarse en el DOM; HTML embebido, scripts y atributos peligrosos no se ejecutan.
 
-### Fase 2 — UI Webview con Markdown
-1. Crear panel `BranchNotes`.
-2. Listar notas de todas las ramas del repositorio.
-3. Mostrar metadata visible: rama de origen, fecha, título.
-4. Renderizar contenido Markdown en detalle de nota.
+## Desarrollo
 
-### Fase 3 — Testing y calidad
-1. **Unit tests**:
-   - clave de storage por workspace/rama.
-   - lectura de rama con mocks de Git API.
-2. **Integration tests**:
-   - comando abre panel.
-   - creación de nota y posterior listado.
-3. Ejecutar tests en CI en cada push y PR.
+Requisitos: Node.js LTS y VS Code.
 
-### Fase 4 — CI/CD en GitHub Actions
-1. `ci.yml`:
-   - checkout
-   - setup node
-   - install (`npm ci`)
-   - lint + test
-2. `release.yml` (manual/tag):
-   - build
-   - `vsce package`
-   - `vsce publish` usando `VSCE_PAT` en secrets.
-3. Versionado semántico y changelog mínimo por release.
-
-### Fase 5 — Documentación y adopción
-1. README con propuesta de valor, instalación y comandos.
-2. GIF/capturas del flujo principal (crear + ver notas por rama).
-3. Sección de limitaciones del MVP y roadmap.
-
-## 4) Ejemplo básico de código
-
-### 4.1 Leer rama actual con Git API
-
-```ts
-import * as vscode from 'vscode';
-
-export async function getCurrentBranchName(): Promise<string | undefined> {
-  const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports;
-  const git = gitExtension?.getAPI(1);
-  const repo = git?.repositories?.[0];
-
-  return repo?.state.HEAD?.name;
-}
+```text
+npm ci
+npm run lint
+npm run typecheck
+npm run test:unit
+npm run test:integration
+npm run package
 ```
 
-### 4.2 Abrir Webview Panel
+La integración usa `@vscode/test-electron`; en Linux necesita un display virtual, por ejemplo `xvfb-run -a npm run test:integration`. Las pruebas trabajan con directorios temporales o con el entorno de pruebas de VS Code y no deben usar las notas reales del workspace.
 
-```ts
-import * as vscode from 'vscode';
+## Publicación
 
-export function openBranchNotesPanel(context: vscode.ExtensionContext) {
-  const panel = vscode.window.createWebviewPanel(
-    'branchNotes',
-    'BranchNotes',
-    vscode.ViewColumn.One,
-    { enableScripts: true }
-  );
+Los workflows de GitHub Actions ejecutan lint, typecheck, pruebas y empaquetado en cada push y pull request. `release.yml` también se activa manualmente o con tags semánticos como `v0.1.0`, publica el `.vsix` como artefacto y utiliza el secreto protegido `VSCE_PAT` para el Marketplace. El token nunca se almacena en el repositorio.
 
-  panel.webview.html = `
-    <!doctype html>
-    <html>
-      <body>
-        <h1>BranchNotes</h1>
-        <p>Listado de notas por rama</p>
-      </body>
-    </html>
-  `;
-}
-```
+## Limitaciones y roadmap
 
-## 5) Recomendación de implementación incremental
-
-1. Entregar primero Fase 1 + comando simple de creación/listado (sin UI compleja).
-2. Agregar Webview en segunda iteración.
-3. Cerrar MVP cuando CI, tests y publicación estén automatizados.
+El MVP no incluye sincronización remota, colaboración, cifrado, búsqueda avanzada, etiquetas, favoritos, configuración de ubicación ni soporte completo para múltiples repositorios en un workspace multi-root. Las siguientes iteraciones pueden añadir esas capacidades y un editor Markdown dedicado dentro del Webview.
