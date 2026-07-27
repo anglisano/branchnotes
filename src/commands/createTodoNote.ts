@@ -16,9 +16,17 @@ export async function createTodoNote(
     return;
   }
 
-  const todos = await scanner.scan(folder.uri);
+  let todos: Awaited<ReturnType<TodoScanner['scan']>>;
+  try {
+    todos = await scanner.scan(folder.uri);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    void vscode.window.showErrorMessage(`No se pudieron buscar TODOs: ${message}`);
+    return;
+  }
+
   if (todos.length === 0) {
-    void vscode.window.showInformationMessage('No se encontraron TODOs, FIXMEs, HACKs o XXXs.');
+    void vscode.window.showInformationMessage('No se encontraron TODOs, FIXMEs, HACKs o XXXs. No se creó ninguna nota.');
     return;
   }
 
