@@ -2,6 +2,10 @@
 
 BranchNotes is a VS Code extension for keeping local Markdown notes organized by Git repository and branch. Capture the context of a branch without mixing it with notes from another one.
 
+<p align="center">
+  <img src="media/demo.gif" alt="BranchNotes extension demo" width="800">
+</p>
+
 ## Features
 
 - Browse notes grouped by branch from the BranchNotes panel.

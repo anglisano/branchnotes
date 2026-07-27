@@ -7,3 +7,4 @@ vsix-inspect/
 *.vsix
 .DS_Store
 .github/prompts/*
+.vscode/branchnotes/
