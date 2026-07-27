@@ -230,11 +230,11 @@ export class NotesPanel {
       return undefined;
     }
 
-    const candidates = [
-      noteUri ? vscode.Uri.joinPath(noteUri, '..', src) : undefined,
-      vscode.Uri.joinPath(workspaceUri, src)
-    ].filter((candidate): candidate is vscode.Uri => candidate !== undefined);
-    const candidate = candidates.find((uri) => this.isWithinWorkspace(uri, workspaceUri));
+    const workspaceRelative = vscode.Uri.joinPath(workspaceUri, src);
+    const noteRelative = noteUri ? vscode.Uri.joinPath(noteUri, '..', src) : undefined;
+    const candidates = [noteRelative, workspaceRelative];
+    const validCandidates = candidates.filter((candidate): candidate is vscode.Uri => candidate !== undefined);
+    const candidate = validCandidates.find((uri) => this.isWithinWorkspace(uri, workspaceUri));
     return candidate ? this.panel?.webview.asWebviewUri(candidate).toString() : undefined;
   }
 
