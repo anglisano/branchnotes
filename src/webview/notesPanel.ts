@@ -22,6 +22,7 @@ export class NotesPanel {
   ) {}
 
   public open(): void {
+    const folder = vscode.workspace.workspaceFolders?.[0];
     if (this.panel) {
       this.panel.reveal(vscode.ViewColumn.One);
       void this.refresh();
@@ -32,7 +33,11 @@ export class NotesPanel {
       'branchNotes',
       'BranchNotes',
       vscode.ViewColumn.One,
-      { enableScripts: true, retainContextWhenHidden: true }
+      {
+        enableScripts: true,
+        retainContextWhenHidden: true,
+        localResourceRoots: folder ? [folder.uri] : []
+      }
     );
     this.panel.webview.html = this.getHtml();
     this.disposables.push(
@@ -60,7 +65,9 @@ export class NotesPanel {
         notes: result.notes.map((note) => ({
           ...note,
           fileUri: note.fileUri?.toString() ?? '',
-          contentHtml: renderMarkdown(note.content)
+          contentHtml: renderMarkdown(note.content, {
+            resolveImageSrc: (src) => this.resolveImageSrc(src, folder.uri, note.fileUri)
+          })
         })),
         invalidFiles: result.errors.length
       };
@@ -97,17 +104,18 @@ export class NotesPanel {
 
   private getHtml(): string {
     const nonce = createNonce();
+    const cspSource = this.panel?.webview.cspSource ?? "'none'";
     return `<!doctype html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${cspSource} https: data:; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';">
   <title>BranchNotes</title>
   <style>
     :root { color-scheme: light dark; }
     body { color: var(--vscode-foreground); background: var(--vscode-editor-background); font-family: var(--vscode-font-family); margin: 0; padding: 24px; }
-    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+    header { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: -24px -24px 20px; padding: 18px 24px; background: var(--vscode-editor-background); border-bottom: 1px solid var(--vscode-panel-border); }
     h1 { font-size: 22px; margin: 0; }
     h2 { font-size: 15px; margin: 22px 0 10px; color: var(--vscode-textLink-foreground); }
     button { border: 0; border-radius: 4px; padding: 7px 11px; color: var(--vscode-button-foreground); background: var(--vscode-button-background); cursor: pointer; }
@@ -124,20 +132,30 @@ export class NotesPanel {
     .note-content pre { overflow-x: auto; padding: 10px; background: var(--vscode-textCodeBlock-background); }
     .note-content a { color: var(--vscode-textLink-foreground); }
     .actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+    .toolbar { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+    .note-picker { min-width: 220px; max-width: min(420px, 45vw); padding: 6px 8px; color: var(--vscode-dropdown-foreground); background: var(--vscode-dropdown-background); border: 1px solid var(--vscode-dropdown-border); }
+    .note-content img { display: block; max-width: 100%; height: auto; margin: 12px 0; }
+    @media (max-width: 700px) { header { align-items: flex-start; flex-direction: column; } .toolbar { width: 100%; justify-content: flex-start; } .note-picker { max-width: 100%; flex: 1; } }
   </style>
 </head>
 <body>
   <header>
     <div><h1>BranchNotes</h1><p class="context" id="context">Cargando notas…</p></div>
-    <div class="toolbar"><button id="create">Nueva nota</button><button class="secondary" id="createTodos">Importar TODOs</button></div>
+    <div class="toolbar"><select class="note-picker" id="notePicker" aria-label="Ir a una nota"><option value="">Ir a una nota…</option></select><button id="create">Nueva nota</button><button class="secondary" id="createTodos">Importar TODOs</button></div>
   </header>
   <main id="notes" aria-live="polite"><div class="empty">Cargando…</div></main>
   <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
     const notesRoot = document.getElementById('notes');
     const contextRoot = document.getElementById('context');
+    const notePicker = document.getElementById('notePicker');
     document.getElementById('create').addEventListener('click', () => vscode.postMessage({ type: 'create' }));
     document.getElementById('createTodos').addEventListener('click', () => vscode.postMessage({ type: 'createTodos' }));
+    notePicker.addEventListener('change', () => {
+      if (!notePicker.value) return;
+      document.getElementById(notePicker.value)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      notePicker.value = '';
+    });
     notesRoot.addEventListener('click', (event) => {
       const button = event.target.closest('button[data-action]');
       if (!button) return;
@@ -154,6 +172,11 @@ export class NotesPanel {
       const state = message.state;
       contextRoot.textContent = state.context.displayName + (state.context.status === 'no-git' ? ' · las notas se guardan en no-git' : '');
       notesRoot.replaceChildren();
+      notePicker.replaceChildren();
+      const firstOption = document.createElement('option');
+      firstOption.value = '';
+      firstOption.textContent = 'Ir a una nota…';
+      notePicker.appendChild(firstOption);
       if (state.invalidFiles > 0) {
         const warning = document.createElement('div');
         warning.className = 'warning';
@@ -179,12 +202,17 @@ export class NotesPanel {
         for (const note of notes) {
           const article = document.createElement('article');
           article.className = 'note';
+          article.id = 'note-' + note.id;
           article.innerHTML = '<div class="note-header"><span class="note-title"></span><span class="note-date"></span></div><div class="note-content"></div><div class="actions"><button data-action="open">Abrir archivo</button><button class="secondary" data-action="delete">Eliminar</button></div>';
           article.querySelector('.note-title').textContent = note.title;
           article.querySelector('.note-date').textContent = new Date(note.modifiedAt).toLocaleString();
           article.querySelector('.note-content').innerHTML = note.contentHtml;
           article.querySelectorAll('button').forEach((button) => { button.dataset.id = note.id; });
           notesRoot.appendChild(article);
+          const option = document.createElement('option');
+          option.value = article.id;
+          option.textContent = note.title + ' · ' + note.branchName;
+          notePicker.appendChild(option);
         }
       }
     });
@@ -192,6 +220,27 @@ export class NotesPanel {
   </script>
 </body>
 </html>`;
+  }
+
+  private resolveImageSrc(src: string, workspaceUri: vscode.Uri, noteUri?: vscode.Uri): string | undefined {
+    if (/^(https?:|data:)/i.test(src)) {
+      return src;
+    }
+    if (src.startsWith('#') || /^[a-z][a-z0-9+.-]*:/i.test(src)) {
+      return undefined;
+    }
+
+    const workspaceRelative = vscode.Uri.joinPath(workspaceUri, src);
+    const noteRelative = noteUri ? vscode.Uri.joinPath(noteUri, '..', src) : undefined;
+    const candidates = [noteRelative, workspaceRelative];
+    const validCandidates = candidates.filter((candidate): candidate is vscode.Uri => candidate !== undefined);
+    const candidate = validCandidates.find((uri) => this.isWithinWorkspace(uri, workspaceUri));
+    return candidate ? this.panel?.webview.asWebviewUri(candidate).toString() : undefined;
+  }
+
+  private isWithinWorkspace(uri: vscode.Uri, workspaceUri: vscode.Uri): boolean {
+    const workspacePath = workspaceUri.fsPath.endsWith('/') ? workspaceUri.fsPath : `${workspaceUri.fsPath}/`;
+    return uri.fsPath === workspaceUri.fsPath || uri.fsPath.startsWith(workspacePath);
   }
 
   private disposePanel(): void {
